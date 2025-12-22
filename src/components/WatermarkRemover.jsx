@@ -12,7 +12,7 @@ function WatermarkRemover() {
   const [brushSize, setBrushSize] = useState(30)
   const [isDrawing, setIsDrawing] = useState(false)
   const [opencvReady, setOpencvReady] = useState(false)
-  
+
   // Canvas refs for drawing mask
   const canvasRef = useRef(null)
   const maskCanvasRef = useRef(null)
@@ -50,9 +50,11 @@ useEffect(() => {
 
     const img = new Image()
     img.onload = () => {
-      // Set canvas size to match image (with max dimensions)
-      const maxWidth = 800
-      const maxHeight = 600
+      // Set canvas size to match image (responsive to viewport)
+      // Use smaller max width on mobile devices
+      const viewportWidth = window.innerWidth
+      const maxWidth = viewportWidth < 640 ? Math.min(viewportWidth - 48, 400) : 800
+      const maxHeight = viewportWidth < 640 ? 400 : 600
       let width = img.width
       let height = img.height
 
@@ -88,8 +90,29 @@ useEffect(() => {
     setError(null)
   }
 
+  // Get coordinates from mouse or touch event
+  const getEventCoordinates = (e) => {
+    const canvas = canvasRef.current
+    const rect = canvas.getBoundingClientRect()
+
+    // Handle touch events
+    if (e.touches && e.touches.length > 0) {
+      return {
+        x: e.touches[0].clientX - rect.left,
+        y: e.touches[0].clientY - rect.top
+      }
+    }
+
+    // Handle mouse events
+    return {
+      x: e.clientX - rect.left,
+      y: e.clientY - rect.top
+    }
+  }
+
   // Drawing functions for the mask
   const startDrawing = (e) => {
+    e.preventDefault() // Prevent scrolling on touch devices
     setIsDrawing(true)
     draw(e)
   }
@@ -100,15 +123,14 @@ useEffect(() => {
 
   const draw = (e) => {
     if (!isDrawing || !maskCanvasRef.current) return
+    e.preventDefault() // Prevent scrolling on touch devices
 
     const canvas = canvasRef.current
     const maskCanvas = maskCanvasRef.current
-    const ctx = canvas.getContext('2d', { willReadFrequently: true }) 
-    const maskCtx = maskCanvas.getContext('2d', { willReadFrequently: true }) 
-    
-    const rect = canvas.getBoundingClientRect()
-    const x = e.clientX - rect.left
-    const y = e.clientY - rect.top
+    const ctx = canvas.getContext('2d', { willReadFrequently: true })
+    const maskCtx = maskCanvas.getContext('2d', { willReadFrequently: true })
+
+    const { x, y } = getEventCoordinates(e)
 
     // Draw on mask (white = area to inpaint)
     maskCtx.fillStyle = 'white'
@@ -272,36 +294,31 @@ useEffect(() => {
   }
 
   return (
-    <div className="card p-8">
+    <div>
       {/* Upload Section - only show if no file */}
       {!originalFile && (
-        <>
-          <FileUpload onFileSelect={handleFileSelect} />
-          <div className="mt-8 text-center text-zinc-600 dark:text-zinc-500 text-sm">
-            <p>Upload an image, then paint over the watermark you want to remove.</p>
-          </div>
-        </>
+        <FileUpload onFileSelect={handleFileSelect} />
       )}
 
       {/* Canvas Drawing Section */}
       {originalFile && !processedImage && (
         <div className="space-y-6">
           {/* Brush Controls */}
-          <div className="flex items-center justify-between flex-wrap gap-4">
-            <div className="flex items-center gap-4">
-              <Paintbrush className="w-5 h-5 text-zinc-600 dark:text-zinc-400" />
-              <label className="text-sm text-zinc-600 dark:text-zinc-400">Brush Size:</label>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
+            <div className="flex items-center gap-2 sm:gap-4">
+              <Paintbrush className="w-5 h-5 text-zinc-600 dark:text-zinc-400 flex-shrink-0" />
+              <label className="text-sm text-zinc-600 dark:text-zinc-400 whitespace-nowrap">Brush:</label>
               <input
                 type="range"
                 min="10"
                 max="100"
                 value={brushSize}
                 onChange={(e) => setBrushSize(Number(e.target.value))}
-                className="w-32 accent-accent-500"
+                className="flex-1 sm:w-32 accent-accent-500"
               />
-              <span className="text-sm text-zinc-600 dark:text-zinc-500 w-8">{brushSize}px</span>
+              <span className="text-sm text-zinc-600 dark:text-zinc-500 w-12 text-right">{brushSize}px</span>
             </div>
-            <button onClick={clearMask} className="btn-secondary flex items-center gap-2 text-sm py-2 px-4">
+            <button onClick={clearMask} className="btn-secondary flex items-center justify-center gap-2 text-sm py-2 px-4">
               <Eraser className="w-4 h-4" />
               Clear
             </button>
@@ -315,6 +332,10 @@ useEffect(() => {
               onMouseUp={stopDrawing}
               onMouseLeave={stopDrawing}
               onMouseMove={draw}
+              onTouchStart={startDrawing}
+              onTouchEnd={stopDrawing}
+              onTouchCancel={stopDrawing}
+              onTouchMove={draw}
               className="cursor-crosshair max-w-full"
               style={{ touchAction: 'none' }}
             />
@@ -369,15 +390,19 @@ useEffect(() => {
             />
           </div>
 
-          <div className="flex justify-center gap-4">
-            <button onClick={reset} className="btn-secondary flex items-center gap-2">
-              <RefreshCw className="w-4 h-4" />
-              Start Over
-            </button>
-            <button onClick={downloadImage} className="btn-primary flex items-center gap-2">
-              <Download className="w-4 h-4" />
-              Download
-            </button>
+          {/* Sticky Action Buttons */}
+          <div className="sticky bottom-20 sm:bottom-4 z-40">
+            <div className="flex justify-center gap-2 sm:gap-4 p-3 sm:p-4 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-sm rounded-xl border border-green-100 dark:border-zinc-800 shadow-lg">
+              <button onClick={reset} className="btn-secondary flex items-center gap-2 text-sm sm:text-base px-4 sm:px-6 py-2 sm:py-3">
+                <RefreshCw className="w-4 h-4" />
+                <span className="hidden sm:inline">Start Over</span>
+                <span className="sm:hidden">Reset</span>
+              </button>
+              <button onClick={downloadImage} className="btn-primary flex items-center gap-2 text-sm sm:text-base px-4 sm:px-6 py-2 sm:py-3">
+                <Download className="w-4 h-4" />
+                Download
+              </button>
+            </div>
           </div>
         </div>
       )}

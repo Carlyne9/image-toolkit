@@ -1,14 +1,14 @@
 import { useState, useRef } from 'react'
-import { Upload, X, Image as ImageIcon } from 'lucide-react'
+import { Upload, X } from 'lucide-react'
 
 // =====================================================
 // FILE UPLOAD COMPONENT
-// This is a reusable component for uploading images.
+// This is a reusable component for uploading images and videos.
 // It handles drag-and-drop, click to upload, and shows
-// a preview of the uploaded image.
+// a preview of the uploaded file.
 // =====================================================
 
-function FileUpload({ onFileSelect, acceptedTypes = 'image/*', maxSizeMB = 10 }) {
+function FileUpload({ onFileSelect, acceptedTypes = 'image/*', maxSizeMB = 10, helpText = null }) {
   // State to track if user is dragging a file over the zone
   const [isDragging, setIsDragging] = useState(false)
   // State to store the selected file
@@ -17,20 +17,34 @@ function FileUpload({ onFileSelect, acceptedTypes = 'image/*', maxSizeMB = 10 })
   const [preview, setPreview] = useState(null)
   // State for error messages
   const [error, setError] = useState(null)
-  
+
   // Reference to the hidden file input
   const fileInputRef = useRef(null)
 
   // Convert MB to bytes for validation
   const maxSizeBytes = maxSizeMB * 1024 * 1024
 
+  // Check if file type is allowed based on acceptedTypes prop
+  const isFileTypeAllowed = (file) => {
+    const types = acceptedTypes.split(',').map(t => t.trim())
+    return types.some(type => {
+      if (type === 'image/*') return file.type.startsWith('image/')
+      if (type === 'video/*') return file.type.startsWith('video/')
+      return file.type === type
+    })
+  }
+
+  // Check if file is a video
+  const isVideo = (file) => file?.type.startsWith('video/')
+
   // Handle when a file is selected (either by drop or click)
   const handleFile = (file) => {
     setError(null)
 
-    // Validate file type
-    if (!file.type.startsWith('image/')) {
-      setError('Please upload an image file')
+    // Validate file type based on acceptedTypes prop
+    if (!isFileTypeAllowed(file)) {
+      const allowsVideo = acceptedTypes.includes('video')
+      setError(allowsVideo ? 'Please upload an image or video file' : 'Please upload an image file')
       return
     }
 
@@ -40,12 +54,12 @@ function FileUpload({ onFileSelect, acceptedTypes = 'image/*', maxSizeMB = 10 })
       return
     }
 
-    // Create a preview URL for the image
+    // Create a preview URL
     const previewUrl = URL.createObjectURL(file)
-    
+
     setSelectedFile(file)
     setPreview(previewUrl)
-    
+
     // Call the parent's callback with the file
     if (onFileSelect) {
       onFileSelect(file)
@@ -119,7 +133,7 @@ function FileUpload({ onFileSelect, acceptedTypes = 'image/*', maxSizeMB = 10 })
           className={`
             upload-zone cursor-pointer
             border-2 border-dashed border-green-200 dark:border-zinc-700 rounded-2xl bg-white dark:bg-transparent
-            p-12 text-center
+            p-6 sm:p-12 text-center
             ${isDragging ? 'dragging' : ''}
           `}
         >
@@ -129,10 +143,10 @@ function FileUpload({ onFileSelect, acceptedTypes = 'image/*', maxSizeMB = 10 })
             </div>
             <div>
               <p className="text-zinc-900 dark:text-zinc-200 font-medium mb-1">
-                Drop your image here, or click to browse
+                Drop your file here, or click to browse
               </p>
               <p className="text-zinc-600 dark:text-zinc-500 text-sm">
-                Supports JPG, PNG, WebP up to {maxSizeMB}MB
+                {helpText || `Supports JPG, PNG, WebP up to ${maxSizeMB}MB`}
               </p>
             </div>
           </div>
@@ -141,15 +155,24 @@ function FileUpload({ onFileSelect, acceptedTypes = 'image/*', maxSizeMB = 10 })
         /* If a file is selected, show the preview */
         <div className="card p-4">
           <div className="flex items-start gap-4">
-            {/* Image Preview */}
+            {/* Preview - Image or Video */}
             <div className="preview-container w-32 h-32 flex-shrink-0">
-              <img
-                src={preview}
-                alt="Preview"
-                className="w-full h-full object-contain"
-              />
+              {isVideo(selectedFile) ? (
+                <video
+                  src={preview}
+                  className="w-full h-full object-contain"
+                  muted
+                  playsInline
+                />
+              ) : (
+                <img
+                  src={preview}
+                  alt="Preview"
+                  className="w-full h-full object-contain"
+                />
+              )}
             </div>
-            
+
             {/* File Info */}
             <div className="flex-1 min-w-0">
               <div className="flex items-start justify-between gap-4">
@@ -159,11 +182,12 @@ function FileUpload({ onFileSelect, acceptedTypes = 'image/*', maxSizeMB = 10 })
                   </p>
                   <p className="text-zinc-600 dark:text-zinc-500 text-sm">
                     {(selectedFile.size / 1024 / 1024).toFixed(2)} MB
+                    {isVideo(selectedFile) && ' • Video'}
                   </p>
                 </div>
                 <button
                   onClick={clearFile}
-                  className="p-2 text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200 hover:bg-green-50 dark:hover:bg-zinc-800 rounded-lg transition-colors"
+                  className="p-2.5 text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200 hover:bg-green-50 dark:hover:bg-zinc-800 rounded-lg transition-colors"
                 >
                   <X className="w-5 h-5" />
                 </button>
