@@ -3,8 +3,7 @@ import { Download, RefreshCw, ArrowRight, AlertCircle, Loader2 } from 'lucide-re
 import FileUpload from './FileUpload'
 import GIF from 'gif.js'
 
-// SVG conversion creates an embedded image within SVG markup
-// For true vector tracing, install: npm install potrace or similar
+c// For better control, consider: npm install potrace-js or image-tracer-js
 
 // =====================================================
 // FORMAT CONVERTER COMPONENT
@@ -26,76 +25,57 @@ function FormatConverter() {
     const [error, setError] = useState(null)
     const [originalSize, setOriginalSize] = useState(0)
     const [convertedSize, setConvertedSize] = useState(0)
-    const [isVideoFile, setIsVideoFile] = useState(false)
-
-    // Video format MIME types
-    const VIDEO_FORMATS = [
-        'video/mp4',
-        'video/mpeg',
-        'video/quicktime',
-        'video/x-msvideo',
-        'video/x-matroska',
-        'video/webm',
-        'video/ogg',
-        'video/3gpp',
-        'video/3gpp2',
-        'video/x-flv',
-        'video/x-m4v'
-    ]
-
-    // Check if file is a video format
-    const isVideoFormat = (file) => {
-        if (!file) return false
-        return VIDEO_FORMATS.some(format => 
-            file.type.toLowerCase().includes(format) ||
-            file.name.toLowerCase().match(/\.(mp4|mpeg|mov|avi|mkv|webm|ogv|3gp|3g2|flv|m4v|ts|mts|m2ts|mxf|f4v|asf|wmv|rm|rmvb)$/i)
-        )
-    }
 
     // Available output formats
     const formats = [
-      { 
-        id: 'png', 
-        label: 'PNG', 
-        mime: 'image/png', 
-        description: 'Lossless, transparency support',
-        warning: null
-      },
-      { 
-        id: 'jpeg', 
-        label: 'JPEG', 
-        mime: 'image/jpeg', 
-        description: 'Compressed photos, no transparency',
-        warning: null
-      },
-      { 
-        id: 'webp', 
-        label: 'WebP', 
-        mime: 'image/webp', 
-        description: 'Modern format, best compression',
-        warning: null
-      },
-      { 
-        id: 'jpg', 
-        label: 'JPG', 
-        mime: 'image/jpeg', 
-        description: 'Same as JPEG, standard format',
-        warning: null
-      },
-      { 
-        id: 'gif', 
-        label: 'GIF', 
-        mime: 'image/gif', 
-        description: 'Animated or simple images',
-        warning: 'Best for simple graphics, 256 colors'
-      },
-      { 
-        id: 'svg', 
-        label: 'SVG', 
-        mime: 'image/svg+xml', 
-        description: 'Embedded image in SVG format',
-        warning: 'Creates an SVG container for your image (not true vector tracing)'
-      }
+        {
+            id: 'png',
+            label: 'PNG',
+            mime: 'image/png',
+            description: 'Lossless, transparency support',
+            icon: '🖼️',
+            warning: null
+        },
+        {
+            id: 'jpeg',
+            label: 'JPEG',
+            mime: 'image/jpeg',
+            description: 'Compressed photos, no transparency',
+            icon: '📷',
+            warning: null
+        },
+        {
+            id: 'webp',
+            label: 'WebP',
+            mime: 'image/webp',
+            description: 'Modern format, best compression',
+            icon: '⚡',
+            warning: null
+        },
+        {
+            id: 'jpg',
+            label: 'JPG',
+            mime: 'image/jpeg',
+            description: 'Same as JPEG, standard format',
+            icon: '📸',
+            warning: null
+        },
+        {
+            id: 'gif',
+            label: 'GIF',
+            mime: 'image/gif',
+            description: 'Animated or simple images',
+            icon: '🎬',
+            warning: 'Best for simple graphics, 256 colors'
+        },
+        {
+            id: 'svg',
+            label: 'SVG',
+            mime: 'image/svg+xml',
+            description: 'Scalable vector graphics',
+            icon: '✨',
+            warning: 'Not recommended for photos, quality varies'
+        },
     ]
 
     const handleFileSelect = (file) => {
@@ -104,15 +84,6 @@ function FormatConverter() {
         setConvertedImage(null)
         setConvertedSize(0)
         setError(null)
-        
-        // Check if uploaded file is a video
-        const isVideo = isVideoFormat(file)
-        setIsVideoFile(isVideo)
-        
-        // Reset format if GIF was selected but video wasn't uploaded
-        if (targetFormat === 'gif' && !isVideo) {
-            setTargetFormat('png')
-        }
     }
 
     // Convert image when file or settings change
@@ -137,18 +108,11 @@ function FormatConverter() {
 
             // Handle different formats
             if (targetFormat === 'gif') {
-              blob = await convertToGIF(img)
+                blob = await convertToGIF(img)
             } else if (targetFormat === 'svg') {
-              // Convert image to data URL for ImageTracer (better CORS support)
-              const canvas = document.createElement('canvas')
-              canvas.width = img.width
-              canvas.height = img.height
-              const ctx = canvas.getContext('2d')
-              ctx.drawImage(img, 0, 0)
-              const dataUrl = canvas.toDataURL('image/png')
-              blob = await convertToSVG(dataUrl)
+                blob = await convertToSVG(imageUrl)
             } else {
-              blob = await convertToStandard(img)
+                blob = await convertToStandard(img)
             }
 
             if (!blob) {
@@ -242,42 +206,53 @@ function FormatConverter() {
         })
     }
 
-    // Convert to SVG using embedded image (fallback)
-    // Note: For true vector tracing, would need: npm install potrace or similar
+    // Convert to SVG using image-tracer-js from CDN
     const convertToSVG = async (imageUrl) => {
-      return new Promise((resolve, reject) => {
-        try {
-          const img = new Image()
-          img.onload = () => {
-            const canvas = document.createElement('canvas')
-            canvas.width = img.width
-            canvas.height = img.height
-            const ctx = canvas.getContext('2d')
-            ctx.drawImage(img, 0, 0)
-            
-            const base64Image = canvas.toDataURL('image/png')
-            const width = img.width
-            const height = img.height
-
-            const svgContent = `<?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">
-  <image width="${width}" height="${height}" x="0" y="0" xlink:href="${base64Image}"/>
-</svg>`
-            
-            const blob = new Blob([svgContent], { type: 'image/svg+xml;charset=utf-8' })
-            resolve(blob)
-          }
-          img.onerror = () => {
-            reject(new Error('Failed to create SVG'))
-          }
-          img.src = imageUrl
-        } catch (err) {
-          reject(new Error(`SVG creation failed: ${err.message}`))
-        }
-      })
+        return new Promise((resolve, reject) => {
+            try {
+                // Load image-tracer-js from CDN if not already loaded
+                if (!window.ImageTracer) {
+                    const script = document.createElement('script')
+                    script.src = 'https://cdn.jsdelivr.net/npm/image-tracer-js@1.2.6/imagetracer.min.js'
+                    script.onload = () => {
+                        performSVGConversion(imageUrl, resolve, reject)
+                    }
+                    script.onerror = () => {
+                        reject(new Error('Failed to load SVG conversion library'))
+                    }
+                    document.head.appendChild(script)
+                } else {
+                    performSVGConversion(imageUrl, resolve, reject)
+                }
+            } catch (err) {
+                reject(new Error(`SVG conversion error: ${err.message}`))
+            }
+        })
     }
 
-
+    // Perform the actual SVG conversion
+    const performSVGConversion = (imageUrl, resolve, reject) => {
+        try {
+            window.ImageTracer.imageToSVG(
+                imageUrl,
+                (svgString) => {
+                    // Convert SVG string to blob
+                    const blob = new Blob([svgString], { type: 'image/svg+xml' })
+                    resolve(blob)
+                },
+                {
+                    colorsampling: 2,
+                    numberofcolors: svgColorCount,
+                    mincolorratio: 0.02,
+                    maxiterations: 10,
+                    ltres: 1,
+                    qtres: 1,
+                }
+            )
+        } catch (err) {
+            reject(new Error(`SVG conversion error: ${err.message}`))
+        }
+    }
 
     // Auto-convert when settings change
     useEffect(() => {
@@ -339,42 +314,25 @@ function FormatConverter() {
                             Output Format
                         </label>
                         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                             {formats.map((format) => {
-                                 // Disable GIF unless a video file is uploaded
-                                 const isGifDisabled = format.id === 'gif' && !isVideoFile
-                                 
-                                 return (
-                                 <button
-                                     key={format.id}
-                                     onClick={() => !isGifDisabled && setTargetFormat(format.id)}
-                                     disabled={isGifDisabled}
-                                     className={`
-                        p-4 rounded-xl border text-left transition-all ${isGifDisabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
-                        ${targetFormat === format.id && !isGifDisabled
-                                             ? 'border-accent-500 bg-accent-500/10 text-accent-600 dark:text-accent-400'
-                                             : isGifDisabled
-                                             ? 'border-gray-300 dark:border-zinc-700 bg-gray-100 dark:bg-zinc-800/30 text-gray-500 dark:text-zinc-500'
-                                             : 'border-green-200 dark:border-zinc-700 bg-white dark:bg-zinc-800/50 text-zinc-700 dark:text-zinc-300 hover:border-green-300 dark:hover:border-zinc-600'
-                                         }
-                        `}
-                        >
-                        <div className="font-semibold text-sm">{format.label}</div>
-                        <div className="text-xs text-zinc-600 dark:text-zinc-500 mt-1">
-                        {isGifDisabled ? 'Upload video to enable' : format.description}
+                            {formats.map((format) => (
+                                <button
+                                    key={format.id}
+                                    onClick={() => setTargetFormat(format.id)}
+                                    className={`
+                    p-4 rounded-xl border text-left transition-all
+                    ${targetFormat === format.id
+                                            ? 'border-accent-500 bg-accent-500/10 text-accent-600 dark:text-accent-400'
+                                            : 'border-green-200 dark:border-zinc-700 bg-white dark:bg-zinc-800/50 text-zinc-700 dark:text-zinc-300 hover:border-green-300 dark:hover:border-zinc-600'
+                                        }
+                  `}
+                                >
+                                    <div className="text-xl mb-1">{format.icon}</div>
+                                    <div className="font-semibold text-sm">{format.label}</div>
+                                    <div className="text-xs text-zinc-600 dark:text-zinc-500 mt-1">{format.description}</div>
+                                </button>
+                            ))}
                         </div>
-                        </button>
-                                 )
-                             })}
-                         </div>
                     </div>
-
-                    {/* GIF disabled warning */}
-                    {!isVideoFile && (
-                        <div className="p-3 bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-900/30 rounded-lg flex gap-2">
-                            <AlertCircle className="w-4 h-4 text-blue-600 dark:text-blue-500 flex-shrink-0 mt-0.5" />
-                            <p className="text-sm text-blue-700 dark:text-blue-600">GIF format is only available for video files (MP4, WebM, etc.)</p>
-                        </div>
-                    )}
 
                     {/* Format-specific warning */}
                     {currentFormat?.warning && (
