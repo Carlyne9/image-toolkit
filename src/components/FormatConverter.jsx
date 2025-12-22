@@ -576,7 +576,6 @@ function FormatConverter() {
                                         }
                   `}
                                 >
-                                    <div className="text-xl mb-1">{format.icon}</div>
                                     <div className="font-semibold text-sm">{format.label}</div>
                                     <div className="text-xs text-zinc-600 dark:text-zinc-500 mt-1">{format.description}</div>
                                 </button>
