@@ -1,6 +1,15 @@
 import { useState, useRef } from 'react'
 import { Download, Loader2, RefreshCw } from 'lucide-react'
 import FileUpload from './FileUpload'
+import { ImageTracer } from '@image-tracer-ts/core'
+
+// Format configurations for download
+const FORMAT_CONFIGS = {
+  png: { mime: 'image/png', extension: 'png', label: 'PNG' },
+  jpeg: { mime: 'image/jpeg', extension: 'jpg', label: 'JPEG' },
+  webp: { mime: 'image/webp', extension: 'webp', label: 'WebP' },
+  svg: { mime: 'image/svg+xml', extension: 'svg', label: 'SVG' },
+}
 
 // =====================================================
 // BACKGROUND REMOVER COMPONENT
@@ -30,6 +39,9 @@ function BackgroundRemover() {
   const [sliderPosition, setSliderPosition] = useState(50)
   const [isDragging, setIsDragging] = useState(false)
   const comparisonRef = useRef(null)
+  // Download format selection
+  const [downloadFormat, setDownloadFormat] = useState('png')
+  const [isConverting, setIsConverting] = useState(false)
 
   // Called when user uploads a file
   const handleFileSelect = (file) => {
@@ -108,17 +120,147 @@ function BackgroundRemover() {
     }
   }
 
-  // Download the processed image
-  const downloadImage = () => {
+  // Optimize image size for faster processing
+  const optimizeImageSize = (img) => {
+    const MAX_WIDTH = 1200
+    const MAX_HEIGHT = 1200
+    let width = img.width
+    let height = img.height
+
+    // Scale down if larger than max dimensions
+    if (width > MAX_WIDTH || height > MAX_HEIGHT) {
+      const widthRatio = MAX_WIDTH / width
+      const heightRatio = MAX_HEIGHT / height
+      const ratio = Math.min(widthRatio, heightRatio)
+      width = Math.round(width * ratio)
+      height = Math.round(height * ratio)
+    }
+
+    return { width, height }
+  }
+
+  // Convert image to SVG using image tracing
+  const convertToSVG = async (img) => {
+    try {
+      // Optimize image size for faster processing
+      const { width, height } = optimizeImageSize(img)
+
+      // Draw image to canvas to get ImageData
+      const canvas = document.createElement('canvas')
+      canvas.width = width
+      canvas.height = height
+      const ctx = canvas.getContext('2d')
+      ctx.drawImage(img, 0, 0, width, height)
+      const imageData = ctx.getImageData(0, 0, width, height)
+
+      // Configure tracer for color mode (simple, default)
+      const options = {
+        numberOfColors: 16,
+        colorSamplingMode: 'scan',
+        fillStyle: 'fill',
+        strokeWidth: 0,
+        lineErrorMargin: 1,
+        curveErrorMargin: 1,
+        colorClusteringCycles: 3,
+        minColorQuota: 0.02,
+      }
+
+      const tracer = new ImageTracer(options)
+      const svgString = tracer.traceImage(imageData)
+
+      // Convert SVG string to blob
+      const blob = new Blob([svgString], { type: 'image/svg+xml' })
+      return blob
+    } catch (err) {
+      throw new Error(`SVG conversion error: ${err.message}`)
+    }
+  }
+
+  // Convert image to selected format
+  const convertImage = async () => {
     if (!processedImage) return
     
-    const link = document.createElement('a')
-    link.href = processedImage
-    const fileExtension = originalFile.name.split('.').pop()
-    link.download = `${originalFile.name.replace(`.${fileExtension}`, '')}-no-bg.png`
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
+    setIsConverting(true)
+    try {
+      // Load the processed image
+      const img = new Image()
+      img.crossOrigin = 'anonymous'
+      
+      await new Promise((resolve, reject) => {
+        img.onload = resolve
+        img.onerror = reject
+        img.src = processedImage
+      })
+
+      // Handle SVG separately
+      if (downloadFormat === 'svg') {
+        return await convertToSVG(img)
+      }
+
+      // Optimize image size for faster processing
+      const { width, height } = optimizeImageSize(img)
+
+      // Create canvas with appropriate settings for other formats
+      const canvas = document.createElement('canvas')
+      canvas.width = width
+      canvas.height = height
+      const ctx = canvas.getContext('2d')
+
+      // For JPEG, fill with white background (no transparency support)
+      if (downloadFormat === 'jpeg') {
+        ctx.fillStyle = '#FFFFFF'
+        ctx.fillRect(0, 0, width, height)
+      }
+
+      // Draw the image (scaled)
+      ctx.drawImage(img, 0, 0, width, height)
+
+      // Convert to blob with appropriate quality
+      const format = FORMAT_CONFIGS[downloadFormat]
+      const qualityValue = downloadFormat === 'png' ? undefined : 0.9
+
+      return new Promise((resolve) => {
+        canvas.toBlob(resolve, format.mime, qualityValue)
+      })
+    } finally {
+      setIsConverting(false)
+    }
+  }
+
+  // Download the processed image in selected format
+  const downloadImage = async () => {
+    if (!processedImage) return
+    
+    try {
+      let blob
+      
+      // If PNG, we can download directly from the API
+      // For other formats, we need to convert
+      if (downloadFormat === 'png') {
+        const response = await fetch(processedImage)
+        blob = await response.blob()
+      } else {
+        blob = await convertImage()
+      }
+
+      // Create download link
+      const url = URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = url
+      
+      const fileBaseName = originalFile.name.split('.').slice(0, -1).join('.')
+      const format = FORMAT_CONFIGS[downloadFormat]
+      link.download = `${fileBaseName}-no-bg.${format.extension}`
+      
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      
+      URL.revokeObjectURL(url)
+    } catch (err) {
+      setError('Failed to download image')
+      console.error('Download error:', err)
+    }
   }
 
   // Reset to start over
@@ -247,6 +389,30 @@ function BackgroundRemover() {
             </p>
           </div>
 
+          {/* Format Selection */}
+          <div className="p-4 bg-white dark:bg-zinc-800/50 rounded-xl border border-green-100 dark:border-zinc-700">
+            <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-3">
+              Download Format
+            </label>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+              {Object.entries(FORMAT_CONFIGS).map(([format, config]) => (
+                <button
+                  key={format}
+                  onClick={() => setDownloadFormat(format)}
+                  className={`
+                    py-2 px-3 rounded-lg border text-sm font-medium transition-all
+                    ${downloadFormat === format
+                      ? 'border-accent-500 bg-accent-500/10 text-accent-600 dark:text-accent-400'
+                      : 'border-green-200 dark:border-zinc-700 bg-white dark:bg-zinc-800/50 text-zinc-700 dark:text-zinc-300 hover:border-green-300 dark:hover:border-zinc-600'
+                    }
+                  `}
+                >
+                  {config.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
           {/* Sticky Action Buttons */}
           <div className="sticky bottom-20 sm:bottom-4 z-40">
             <div className="flex justify-center gap-2 sm:gap-4 p-3 sm:p-4 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-sm rounded-xl border border-green-100 dark:border-zinc-800 shadow-lg">
@@ -255,10 +421,23 @@ function BackgroundRemover() {
                 <span className="hidden sm:inline">Start Over</span>
                 <span className="sm:hidden">Reset</span>
               </button>
-              <button onClick={downloadImage} className="btn-primary flex items-center gap-2 text-sm sm:text-base px-4 sm:px-6 py-2 sm:py-3">
-                <Download className="w-4 h-4" />
-                <span className="hidden sm:inline">Download PNG</span>
-                <span className="sm:hidden">Download</span>
+              <button 
+                onClick={downloadImage} 
+                disabled={isConverting}
+                className="btn-primary flex items-center gap-2 text-sm sm:text-base px-4 sm:px-6 py-2 sm:py-3"
+              >
+                {isConverting ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Converting...
+                  </>
+                ) : (
+                  <>
+                    <Download className="w-4 h-4" />
+                    <span className="hidden sm:inline">Download {FORMAT_CONFIGS[downloadFormat].label}</span>
+                    <span className="sm:hidden">Download</span>
+                  </>
+                )}
               </button>
             </div>
           </div>
