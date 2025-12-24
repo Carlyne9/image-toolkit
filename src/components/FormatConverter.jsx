@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Download, RefreshCw, ArrowRight, AlertCircle, Loader2, Palette } from 'lucide-react'
 import FileUpload from './FileUpload'
 import GIF from 'gif.js'
@@ -14,6 +14,7 @@ import { ImageTracer } from '@image-tracer-ts/core'
 // =====================================================
 
 function FormatConverter() {
+    const fileUploadRef = useRef(null)
     const [originalFile, setOriginalFile] = useState(null)
     const [convertedImage, setConvertedImage] = useState(null)
     const [targetFormat, setTargetFormat] = useState('png')
@@ -524,6 +525,10 @@ function FormatConverter() {
         setSvgContent(null)
         setSvgColors([])
         setOriginalSvgColors([])
+        // Reset the file upload component
+        if (fileUploadRef.current) {
+            fileUploadRef.current.reset()
+        }
     }
 
     // Format file size for display
@@ -549,6 +554,7 @@ function FormatConverter() {
         <div>
             {/* Upload Section */}
             <FileUpload
+                ref={fileUploadRef}
                 onFileSelect={handleFileSelect}
                 acceptedTypes="image/*,video/*"
                 maxSizeMB={50}

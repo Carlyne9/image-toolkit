@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useImperativeHandle, forwardRef } from 'react'
 import { Download, Loader2, RefreshCw } from 'lucide-react'
 import FileUpload from './FileUpload'
 import { ImageTracer } from '@image-tracer-ts/core'
@@ -25,6 +25,7 @@ const FORMAT_CONFIGS = {
 // =====================================================
 
 function BackgroundRemover() {
+  const fileUploadRef = useRef(null)
   // The original uploaded file
   const [originalFile, setOriginalFile] = useState(null)
   // Original image URL for comparison
@@ -270,6 +271,10 @@ function BackgroundRemover() {
     setProcessedImage(null)
     setError(null)
     setSliderPosition(50)
+    // Reset the file upload component
+    if (fileUploadRef.current) {
+      fileUploadRef.current.reset()
+    }
   }
 
   // Comparison slider handlers
@@ -300,7 +305,7 @@ function BackgroundRemover() {
   return (
     <div>
       {/* Upload Section */}
-      <FileUpload onFileSelect={handleFileSelect} />
+      <FileUpload ref={fileUploadRef} onFileSelect={handleFileSelect} />
 
       {/* Process Button */}
       {originalFile && !processedImage && (

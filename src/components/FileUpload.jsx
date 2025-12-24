@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, forwardRef, useImperativeHandle } from 'react'
 import { Upload, X } from 'lucide-react'
 
 // =====================================================
@@ -8,7 +8,7 @@ import { Upload, X } from 'lucide-react'
 // a preview of the uploaded file.
 // =====================================================
 
-function FileUpload({ onFileSelect, acceptedTypes = 'image/*', maxSizeMB = 10, helpText = null }) {
+const FileUpload = forwardRef(({ onFileSelect, acceptedTypes = 'image/*', maxSizeMB = 10, helpText = null }, ref) => {
   // State to track if user is dragging a file over the zone
   const [isDragging, setIsDragging] = useState(false)
   // State to store the selected file
@@ -112,6 +112,11 @@ function FileUpload({ onFileSelect, acceptedTypes = 'image/*', maxSizeMB = 10, h
     }
   }
 
+  // Expose reset method via ref
+  useImperativeHandle(ref, () => ({
+    reset: clearFile
+  }))
+
   return (
     <div className="w-full">
       {/* Hidden file input */}
@@ -205,6 +210,8 @@ function FileUpload({ onFileSelect, acceptedTypes = 'image/*', maxSizeMB = 10, h
       )}
     </div>
   )
-}
+})
+
+FileUpload.displayName = 'FileUpload'
 
 export default FileUpload
