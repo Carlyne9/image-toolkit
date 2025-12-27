@@ -489,31 +489,52 @@ function FormatConverter() {
         }
     }, [originalFile, targetFormat, quality, svgColorCount, svgMode])
 
-    const downloadImage = () => {
+    const downloadImage = async () => {
         if (!convertedImage) return
 
-        const link = document.createElement('a')
+        try {
+            let blob
+            const baseName = originalFile.name.split('.').slice(0, -1).join('.')
+            const extension = targetFormat === 'jpeg' ? 'jpg' : targetFormat
+            const filename = `${baseName}.${extension}`
 
-        // For SVG with edited colors, rebuild from original with color replacements
-        if (targetFormat === 'svg' && svgContent && originalSvgColors.length > 0) {
-            let finalSvg = svgContent
-            originalSvgColors.forEach((colorObj, idx) => {
-                const targetColor = svgColors[idx]
-                if (colorObj.hex !== targetColor) {
-                    finalSvg = replaceColorInSVG(finalSvg, colorObj.original, targetColor)
-                }
-            })
-            const blob = new Blob([finalSvg], { type: 'image/svg+xml' })
-            link.href = URL.createObjectURL(blob)
-        } else {
-            link.href = convertedImage
+            // For SVG with edited colors, rebuild from original with color replacements
+            if (targetFormat === 'svg' && svgContent && originalSvgColors.length > 0) {
+                let finalSvg = svgContent
+                originalSvgColors.forEach((colorObj, idx) => {
+                    const targetColor = svgColors[idx]
+                    if (colorObj.hex !== targetColor) {
+                        finalSvg = replaceColorInSVG(finalSvg, colorObj.original, targetColor)
+                    }
+                })
+                blob = new Blob([finalSvg], { type: 'image/svg+xml' })
+            } else {
+                const response = await fetch(convertedImage)
+                blob = await response.blob()
+            }
+
+            // Use Web Share API on mobile for better UX (save to Photos)
+            if (navigator.share && /android|iphone|ipad|ipod/.test(navigator.userAgent.toLowerCase())) {
+                const file = new File([blob], filename, { type: blob.type })
+                await navigator.share({
+                    files: [file],
+                    title: 'Image',
+                    text: filename
+                })
+            } else {
+                // Fallback: traditional download
+                const link = document.createElement('a')
+                link.href = URL.createObjectURL(blob)
+                link.download = filename
+                link.click()
+                URL.revokeObjectURL(link.href)
+            }
+        } catch (err) {
+            // Silently fail on share API cancellation, or log other errors
+            if (err.name !== 'AbortError') {
+                console.error('Download error:', err)
+            }
         }
-
-        const baseName = originalFile.name.split('.').slice(0, -1).join('.')
-        // Use .jpg extension for JPEG (more common than .jpeg)
-        const extension = targetFormat === 'jpeg' ? 'jpg' : targetFormat
-        link.download = `${baseName}.${extension}`
-        link.click()
     }
 
     const reset = () => {

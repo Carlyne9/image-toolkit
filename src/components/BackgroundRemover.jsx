@@ -273,23 +273,37 @@ function BackgroundRemover() {
         blob = await convertImage()
       }
 
-      // Create download link
-      const url = URL.createObjectURL(blob)
-      const link = document.createElement('a')
-      link.href = url
-      
       const fileBaseName = originalFile.name.split('.').slice(0, -1).join('.')
       const format = FORMAT_CONFIGS[downloadFormat]
-      link.download = `${fileBaseName}-no-bg.${format.extension}`
-      
-      document.body.appendChild(link)
-      link.click()
-      document.body.removeChild(link)
-      
-      URL.revokeObjectURL(url)
+      const filename = `${fileBaseName}-no-bg.${format.extension}`
+
+      // Use Web Share API on mobile for better UX (save to Photos)
+      if (navigator.share && /android|iphone|ipad|ipod/.test(navigator.userAgent.toLowerCase())) {
+        const file = new File([blob], filename, { type: blob.type })
+        await navigator.share({
+          files: [file],
+          title: 'Image',
+          text: filename
+        })
+      } else {
+        // Fallback: traditional download
+        const url = URL.createObjectURL(blob)
+        const link = document.createElement('a')
+        link.href = url
+        link.download = filename
+        
+        document.body.appendChild(link)
+        link.click()
+        document.body.removeChild(link)
+        
+        URL.revokeObjectURL(url)
+      }
     } catch (err) {
-      setError('Failed to download image')
-      console.error('Download error:', err)
+      // Silently fail on share API cancellation, or log other errors
+      if (err.name !== 'AbortError') {
+        setError('Failed to download image')
+        console.error('Download error:', err)
+      }
     }
   }
 
