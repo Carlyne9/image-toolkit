@@ -2,6 +2,7 @@ import { useState, useRef, useImperativeHandle, forwardRef } from 'react'
 import { Download, Loader2, RefreshCw } from 'lucide-react'
 import FileUpload from './FileUpload'
 import { ImageTracer } from '@image-tracer-ts/core'
+import { removeBackground } from '@imgly/background-removal'
 
 // Format configurations for download
 const FORMAT_CONFIGS = {
@@ -53,69 +54,96 @@ function BackgroundRemover() {
     setSliderPosition(50)
   }
 
+  // Get original dimensions and downscale for processing
+  const prepareImageForProcessing = async (file) => {
+    return new Promise((resolve) => {
+      const reader = new FileReader()
+      reader.onload = (e) => {
+        const img = new Image()
+        img.onload = () => {
+          const originalWidth = img.width
+          const originalHeight = img.height
+
+          const canvas = document.createElement('canvas')
+          // Compress to max 1028px for fast processing
+          let width = originalWidth
+          let height = originalHeight
+          const MAX_SIZE = 1028
+
+          if (width > MAX_SIZE || height > MAX_SIZE) {
+            const ratio = Math.min(MAX_SIZE / width, MAX_SIZE / height)
+            width = Math.round(width * ratio)
+            height = Math.round(height * ratio)
+          }
+
+          canvas.width = width
+          canvas.height = height
+          canvas.getContext('2d').drawImage(img, 0, 0, width, height)
+          canvas.toBlob((blob) => {
+            resolve({
+              file: blob,
+              originalWidth,
+              originalHeight,
+              compressedWidth: width,
+              compressedHeight: height,
+            })
+          }, 'image/png')
+        }
+        img.src = e.target.result
+      }
+      reader.readAsDataURL(file)
+    })
+  }
+
+  // Upscale processed image back to original dimensions
+  const upscaleImage = (dataUrl, targetWidth, targetHeight) => {
+    return new Promise((resolve) => {
+      const img = new Image()
+      img.onload = () => {
+        const canvas = document.createElement('canvas')
+        canvas.width = targetWidth
+        canvas.height = targetHeight
+        const ctx = canvas.getContext('2d')
+        // Use high-quality upscaling
+        ctx.imageSmoothingEnabled = true
+        ctx.imageSmoothingQuality = 'high'
+        ctx.drawImage(img, 0, 0, targetWidth, targetHeight)
+        canvas.toBlob(resolve, 'image/png')
+      }
+      img.src = dataUrl
+    })
+  }
+
   // =====================================================
-  // API INTEGRATION
-  // Replace this function with actual API call
+  // CLIENT-SIDE BACKGROUND REMOVAL
+  // Using imgly/background-removal (runs entirely in browser)
+  // Compresses before processing, upscales after for speed + quality
   // =====================================================
-  const removeBackground = async () => {
+  const handleBackgroundRemoval = async () => {
     if (!originalFile) return
 
     setIsProcessing(true)
     setError(null)
 
     try {
-      // =====================================================
-      // OPTION 1: Using remove.bg API
-      // Uncomment this code and add your API key
-      // =====================================================
-      const formData = new FormData()
-      formData.append('image_file', originalFile)
-      formData.append('size', 'auto')
-
-      const apiKey = import.meta.env.VITE_REMOVE_BG_API_KEY
-      const apiUrl = import.meta.env.VITE_REMOVE_BG_API_URL
-
-
-      if (!apiKey) {
-        throw new Error('API key is not configured. Please check your .env file.')
-      }
-
-      const response = await fetch(apiUrl, {
-        method: 'POST',
-        headers: {
-          'X-Api-Key': apiKey,
-        },
-        body: formData,
-      })
-
-      if (!response.ok) {
-        // Log detailed error for debugging, show generic message to user
-        let debugInfo = `Status: ${response.status}`
-        try {
-          const errorData = await response.json()
-          debugInfo = JSON.stringify(errorData)
-          console.error('Background removal API error:', debugInfo)
-        } catch {
-          console.error('Background removal API error:', response.status, response.statusText)
-        }
-
-        // User-friendly messages based on status code
-        if (response.status === 401 || response.status === 403) {
-          throw new Error('API authentication failed. Please check your configuration.')
-        } else if (response.status === 402) {
-          throw new Error('API quota exceeded. Please try again later.')
-        } else if (response.status === 429) {
-          throw new Error('Too many requests. Please wait a moment and try again.')
-        } else {
-          throw new Error('Failed to remove background. Please try again.')
-        }
-      }
-
-      const blob = await response.blob()
-      const imageUrl = URL.createObjectURL(blob)
+      // Compress image for faster processing
+      const { file, originalWidth, originalHeight } = await prepareImageForProcessing(originalFile)
+      
+      // Process with background removal
+      const blob = await removeBackground(file)
+      
+      // Convert to data URL for upscaling
+      const dataUrl = URL.createObjectURL(blob)
+      
+      // Upscale back to original dimensions for better quality
+      const upscaledBlob = await upscaleImage(dataUrl, originalWidth, originalHeight)
+      const imageUrl = URL.createObjectURL(upscaledBlob)
+      
       setProcessedImage(imageUrl)
+      URL.revokeObjectURL(dataUrl)
     } catch (err) {
-      setError(err.message || 'Something went wrong')
+      setError(err.message || 'Failed to remove background')
+      console.error('Background removal error:', err)
     } finally {
       setIsProcessing(false)
     }
@@ -304,6 +332,25 @@ function BackgroundRemover() {
 
   return (
     <div>
+      <style>{`
+        @keyframes pulse-scale {
+          0%, 100% { transform: scale(1); opacity: 1; }
+          50% { transform: scale(1.1); opacity: 0.8; }
+        }
+        .processing-spinner {
+          animation: spin 1s linear infinite;
+        }
+        .processing-text {
+          animation: pulse-scale 1.5s ease-in-out infinite;
+          color: #ffffff;
+          font-weight: 600;
+        }
+        @keyframes spin {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
+        }
+      `}</style>
+      
       {/* Upload Section */}
       <FileUpload ref={fileUploadRef} onFileSelect={handleFileSelect} />
 
@@ -311,14 +358,16 @@ function BackgroundRemover() {
       {originalFile && !processedImage && (
         <div className="mt-6 flex justify-center">
           <button
-            onClick={removeBackground}
+            onClick={handleBackgroundRemoval}
             disabled={isProcessing}
-            className="btn-primary flex items-center gap-2"
+            className={`btn-primary flex items-center gap-3 px-8 py-3 transition-all ${
+              isProcessing ? 'opacity-90' : ''
+            }`}
           >
             {isProcessing ? (
               <>
-                <Loader2 className="w-5 h-5 animate-spin" />
-                Processing...
+                <Loader2 className="w-6 h-6 processing-spinner text-white" />
+                <span className="processing-text font-medium">Processing...</span>
               </>
             ) : (
               'Remove Background'
