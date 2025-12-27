@@ -13,6 +13,7 @@
     "@techstark/opencv-js": "^4.12.0-release.1",
     "gif.js": "^0.2.0",
     "lucide-react": "^0.263.1",
+    "posthog-js": "^1.310.1",
     "potrace": "^2.1.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0"

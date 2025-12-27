@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Eraser, Droplets, RefreshCw, Sparkles, Sun, Moon } from "lucide-react";
+import { Eraser, Droplets, RefreshCw, Sun, Moon } from "lucide-react";
 import BackgroundRemover from "./components/BackgroundRemover";
 import WatermarkRemover from "./components/WatermarkRemover";
 import FormatConverter from "./components/FormatConverter";
@@ -76,14 +76,16 @@ function App() {
   return (
     <div className="min-h-screen bg-white dark:bg-zinc-950">
       {/* ===== HEADER ===== */}
-      <header className="border-b border-green-100 dark:border-zinc-800/50 bg-white dark:bg-transparent">
+      <header className="border-b border-accent-100 dark:border-accent-900/30 bg-white dark:bg-transparent">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 py-4 sm:py-6">
           {/* Logo / Title */}
           <div className="flex items-center justify-between mb-4 sm:mb-6">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-accent-400 to-accent-600 flex items-center justify-center">
-                <Sparkles className="w-5 h-5 text-zinc-900" />
-              </div>
+              <img 
+                src={theme === 'dark' ? '/darkmode.svg' : '/litemode.svg'} 
+                alt="Image Toolkit Logo" 
+                className="w-10 h-10"
+              />
               <div>
                 <h1 className="text-xl font-bold text-zinc-900 dark:text-zinc-100">
                   Image Toolkit
@@ -96,7 +98,7 @@ function App() {
             {/* Theme Toggle Button */}
             <button
               onClick={toggleTheme}
-              className="p-2 rounded-lg bg-green-50 dark:bg-zinc-800/50 hover:bg-green-100 dark:hover:bg-zinc-700 transition-colors duration-200"
+              className="p-2 rounded-lg bg-accent-50 dark:bg-accent-900/20 hover:bg-accent-100 dark:hover:bg-accent-900/40 transition-colors duration-200"
               aria-label="Toggle theme"
             >
               {theme === "dark" ? (
@@ -134,7 +136,7 @@ function App() {
       </header>
 
       {/* Mobile Bottom Navigation */}
-      <nav className="sm:hidden fixed bottom-0 left-0 right-0 bg-white dark:bg-zinc-900 border-t border-green-100 dark:border-zinc-800 z-50">
+      <nav className="sm:hidden fixed bottom-0 left-0 right-0 bg-white dark:bg-zinc-900 border-t border-accent-100 dark:border-accent-900/30 z-50">
         <div className="flex justify-around">
           {tabs.map((tab) => {
             const Icon = tab.icon;
@@ -172,7 +174,7 @@ function App() {
         <div className="max-w-5xl mx-auto px-4 sm:px-6 text-center text-zinc-400 dark:text-zinc-600 text-xs">
           Image Toolkit (c) 2025{" "}
           <span
-            style={{ fontWeight: "bold", color: "green", cursor: "pointer" }}
+            style={{ fontWeight: "bold", color: "#1698CB", cursor: "pointer" }}
             onClick={() => window.open("https://x.com/carlyne177", "_blank")}
           >
             Carlyne

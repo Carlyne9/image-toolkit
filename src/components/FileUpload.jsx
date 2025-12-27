@@ -137,13 +137,13 @@ const FileUpload = forwardRef(({ onFileSelect, acceptedTypes = 'image/*', maxSiz
           onDrop={handleDrop}
           className={`
             upload-zone cursor-pointer
-            border-2 border-dashed border-green-200 dark:border-zinc-700 rounded-2xl bg-white dark:bg-transparent
+            border-2 border-dashed border-accent-200 dark:border-accent-900/40 rounded-2xl bg-white dark:bg-transparent
             p-6 sm:p-12 text-center
             ${isDragging ? 'dragging' : ''}
           `}
         >
           <div className="flex flex-col items-center gap-4">
-            <div className="w-16 h-16 rounded-2xl bg-green-50 dark:bg-zinc-800 flex items-center justify-center">
+            <div className="w-16 h-16 rounded-2xl bg-accent-50 dark:bg-accent-900/20 flex items-center justify-center">
               <Upload className="w-8 h-8 text-accent-600 dark:text-zinc-400" />
             </div>
             <div>
@@ -192,7 +192,7 @@ const FileUpload = forwardRef(({ onFileSelect, acceptedTypes = 'image/*', maxSiz
                 </div>
                 <button
                   onClick={clearFile}
-                  className="p-2.5 text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200 hover:bg-green-50 dark:hover:bg-zinc-800 rounded-lg transition-colors"
+                  className="p-2.5 text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200 hover:bg-accent-50 dark:hover:bg-accent-900/20 rounded-lg transition-colors"
                 >
                   <X className="w-5 h-5" />
                 </button>

@@ -7,19 +7,19 @@
    Feel free to modify these to match your vision!
    ===================================================== */
 
-/* Base body styles - Light mode: pure white background (#ffffff) */
+/* Base body styles - Light mode: white background (#ffffff) */
 body {
   @apply text-zinc-900 dark:text-zinc-100 antialiased;
   min-height: 100vh;
-  background-color: #ffffff;
+  background-color: #FFFFFF;
 }
 
-/* Dark mode background */
+/* Dark mode background - dark navy (#14153C) */
 html.dark body {
-  @apply bg-zinc-950;
+  background-color: #14153C;
   background-image: 
-    radial-gradient(at 0% 0%, rgba(34, 197, 94, 0.08) 0%, transparent 50%),
-    radial-gradient(at 100% 100%, rgba(34, 197, 94, 0.05) 0%, transparent 50%);
+    radial-gradient(at 0% 0%, rgba(139, 121, 238, 0.1) 0%, transparent 50%),
+    radial-gradient(at 100% 100%, rgba(139, 121, 238, 0.05) 0%, transparent 50%);
 }
 
 
@@ -56,15 +56,15 @@ html.dark body {
 
 /* Button styles */
 .btn-primary {
-  @apply px-6 py-3 bg-accent-500 text-zinc-900 font-semibold rounded-xl
-         hover:bg-accent-400 active:bg-accent-600
+  @apply px-6 py-3 bg-accent-500 text-white font-semibold rounded-xl
+         hover:bg-accent-600 active:bg-accent-700
          transition-all duration-200 ease-out
          disabled:opacity-50 disabled:cursor-not-allowed;
 }
 
 .btn-secondary {
-  @apply px-6 py-3 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 font-medium rounded-xl
-         border border-zinc-300 dark:border-zinc-700 hover:bg-green-50 dark:hover:bg-zinc-700 hover:border-green-200 dark:hover:border-zinc-600
+  @apply px-6 py-3 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 font-medium rounded-xl
+         border border-accent-200 dark:border-accent-900 hover:bg-accent-50 dark:hover:bg-accent-900 hover:border-accent-300 dark:hover:border-accent-700
          transition-all duration-200 ease-out;
 }
 
@@ -72,26 +72,26 @@ html.dark body {
 .tab {
   @apply px-5 py-2.5 font-medium text-zinc-500 dark:text-zinc-400 rounded-lg
          transition-all duration-200 ease-out
-         hover:text-zinc-900 dark:hover:text-zinc-200 hover:bg-green-50 dark:hover:bg-zinc-800/50;
+         hover:text-zinc-900 dark:hover:text-zinc-200 hover:bg-accent-50 dark:hover:bg-accent-900/20;
 }
 
 .tab.active {
-  @apply text-accent-600 dark:text-accent-400 bg-green-100 dark:bg-accent-500/10;
+  @apply text-accent-600 dark:text-accent-400 bg-accent-100 dark:bg-accent-500/10;
 }
 
-/* Card styles - Light mode: white background with light green tint */
+/* Card styles - Light mode: white background */
 .card {
-  @apply backdrop-blur-sm border border-green-100 dark:border-zinc-800 rounded-2xl;
+  @apply backdrop-blur-sm border border-accent-100 dark:border-accent-900/30 rounded-2xl;
   background-color: #ffffff;
 }
 
 .dark .card {
-  @apply bg-zinc-900/80;
+  background-color: rgba(20, 21, 60, 0.8);
 }
 
 /* Loading spinner */
 .spinner {
-  @apply w-6 h-6 border-2 border-green-200 dark:border-zinc-600 border-t-accent-500 rounded-full animate-spin;
+  @apply w-6 h-6 border-2 border-accent-200 dark:border-accent-900 border-t-accent-500 rounded-full animate-spin;
 }
 
 /* Image preview container - Light mode: white with light pattern */

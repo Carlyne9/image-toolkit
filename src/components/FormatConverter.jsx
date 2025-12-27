@@ -578,7 +578,7 @@ function FormatConverter() {
                     p-4 rounded-xl border text-left transition-all
                     ${targetFormat === format.id
                                             ? 'border-accent-500 bg-accent-500/10 text-accent-600 dark:text-accent-400'
-                                            : 'border-green-200 dark:border-zinc-700 bg-white dark:bg-zinc-800/50 text-zinc-700 dark:text-zinc-300 hover:border-green-300 dark:hover:border-zinc-600'
+                                            : 'border-accent-200 dark:border-accent-900/30 bg-white dark:bg-zinc-800/50 text-zinc-700 dark:text-zinc-300 hover:border-accent-300 dark:hover:border-zinc-600'
                                         }
                   `}
                                 >
@@ -633,7 +633,7 @@ function FormatConverter() {
                                         className={`p-3 rounded-lg border text-left transition-all ${
                                             svgMode === 'color'
                                                 ? 'border-accent-500 bg-accent-500/10 text-accent-600 dark:text-accent-400'
-                                                : 'border-zinc-200 dark:border-zinc-700 hover:border-zinc-300 dark:hover:border-zinc-600'
+                                                : 'border-zinc-200 dark:border-accent-900/30 hover:border-zinc-300 dark:hover:border-zinc-600'
                                         }`}
                                     >
                                         <div className="font-medium text-sm">Color</div>
@@ -644,7 +644,7 @@ function FormatConverter() {
                                         className={`p-3 rounded-lg border text-left transition-all ${
                                             svgMode === 'monochrome'
                                                 ? 'border-accent-500 bg-accent-500/10 text-accent-600 dark:text-accent-400'
-                                                : 'border-zinc-200 dark:border-zinc-700 hover:border-zinc-300 dark:hover:border-zinc-600'
+                                                : 'border-zinc-200 dark:border-accent-900/30 hover:border-zinc-300 dark:hover:border-zinc-600'
                                         }`}
                                     >
                                         <div className="font-medium text-sm">Monochrome</div>
@@ -686,7 +686,7 @@ function FormatConverter() {
 
                     {/* Size Comparison */}
                     {convertedSize > 0 && !error && (
-                        <div className="p-4 bg-white dark:bg-zinc-800/50 rounded-xl border border-green-100 dark:border-transparent">
+                        <div className="p-4 bg-white dark:bg-zinc-800/50 rounded-xl border border-accent-100 dark:border-transparent">
                             <div className="flex items-center justify-between">
                                 <div className="text-center">
                                     <div className="text-zinc-600 dark:text-zinc-500 text-xs mb-1">Original</div>
@@ -759,7 +759,7 @@ function FormatConverter() {
 
                             {/* SVG Color Editor */}
                             {targetFormat === 'svg' && svgColors.length > 0 && (
-                                <div className="p-4 bg-white dark:bg-zinc-800/50 rounded-xl border border-green-100 dark:border-zinc-700">
+                                <div className="p-4 bg-white dark:bg-zinc-800/50 rounded-xl border border-accent-100 dark:border-accent-900/30">
                                     <div className="flex items-center justify-between mb-3">
                                         <div className="flex items-center gap-2">
                                             <Palette className="w-4 h-4 text-accent-600 dark:text-accent-400" />
@@ -807,7 +807,7 @@ function FormatConverter() {
 
                     {/* Sticky Action Buttons */}
                     <div className="sticky bottom-20 sm:bottom-4 z-40">
-                        <div className="flex justify-center gap-2 sm:gap-4 p-3 sm:p-4 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-sm rounded-xl border border-green-100 dark:border-zinc-800 shadow-lg">
+                        <div className="flex justify-center gap-2 sm:gap-4 p-3 sm:p-4 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-sm rounded-xl border border-accent-100 dark:border-accent-900/30 shadow-lg">
                             <button onClick={reset} className="btn-secondary flex items-center gap-2 text-sm sm:text-base px-4 sm:px-6 py-2 sm:py-3">
                                 <RefreshCw className="w-4 h-4" />
                                 <span className="hidden sm:inline">Start Over</span>

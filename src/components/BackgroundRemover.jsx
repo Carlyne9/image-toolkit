@@ -342,7 +342,7 @@ function BackgroundRemover() {
         }
         .processing-text {
           animation: pulse-scale 1.5s ease-in-out infinite;
-          color: #ffffff;
+          color: #000000;
           font-weight: 600;
         }
         @keyframes spin {
@@ -366,7 +366,7 @@ function BackgroundRemover() {
           >
             {isProcessing ? (
               <>
-                <Loader2 className="w-6 h-6 processing-spinner text-white" />
+                <Loader2 className="w-6 h-6 processing-spinner text-black" />
                 <span className="processing-text font-medium">Processing...</span>
               </>
             ) : (
@@ -444,7 +444,7 @@ function BackgroundRemover() {
           </div>
 
           {/* Format Selection */}
-          <div className="p-4 bg-white dark:bg-zinc-800/50 rounded-xl border border-green-100 dark:border-zinc-700">
+          <div className="p-4 bg-white dark:bg-zinc-800/50 rounded-xl border border-accent-100 dark:border-accent-900/30">
             <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-3">
               Download Format
             </label>
@@ -457,7 +457,7 @@ function BackgroundRemover() {
                     py-2 px-3 rounded-lg border text-sm font-medium transition-all
                     ${downloadFormat === format
                       ? 'border-accent-500 bg-accent-500/10 text-accent-600 dark:text-accent-400'
-                      : 'border-green-200 dark:border-zinc-700 bg-white dark:bg-zinc-800/50 text-zinc-700 dark:text-zinc-300 hover:border-green-300 dark:hover:border-zinc-600'
+                      : 'border-accent-200 dark:border-accent-900/30 bg-white dark:bg-zinc-800/50 text-zinc-700 dark:text-zinc-300 hover:border-accent-300 dark:hover:border-zinc-600'
                     }
                   `}
                 >
@@ -469,7 +469,7 @@ function BackgroundRemover() {
 
           {/* Sticky Action Buttons */}
           <div className="sticky bottom-20 sm:bottom-4 z-40">
-            <div className="flex justify-center gap-2 sm:gap-4 p-3 sm:p-4 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-sm rounded-xl border border-green-100 dark:border-zinc-800 shadow-lg">
+            <div className="flex justify-center gap-2 sm:gap-4 p-3 sm:p-4 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-sm rounded-xl border border-accent-100 dark:border-accent-900/30 shadow-lg">
               <button onClick={reset} className="btn-secondary flex items-center gap-2 text-sm sm:text-base px-4 sm:px-6 py-2 sm:py-3">
                 <RefreshCw className="w-4 h-4" />
                 <span className="hidden sm:inline">Start Over</span>
