@@ -44,6 +44,7 @@ function BackgroundRemover() {
   // Download format selection
   const [downloadFormat, setDownloadFormat] = useState('png')
   const [isConverting, setIsConverting] = useState(false)
+  const [showFormatDropdown, setShowFormatDropdown] = useState(false)
 
   // Called when user uploads a file
   const handleFileSelect = (file) => {
@@ -443,8 +444,8 @@ function BackgroundRemover() {
             </p>
           </div>
 
-          {/* Format Selection */}
-          <div className="p-4 bg-white dark:bg-zinc-800/50 rounded-xl border border-accent-100 dark:border-accent-900/30">
+          {/* Format Selection - Desktop only */}
+          <div className="hidden sm:block p-4 bg-white dark:bg-zinc-800/50 rounded-xl border border-accent-100 dark:border-accent-900/30">
             <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-3">
               Download Format
             </label>
@@ -475,10 +476,40 @@ function BackgroundRemover() {
                 <span className="hidden sm:inline">Start Over</span>
                 <span className="sm:hidden">Reset</span>
               </button>
+              {/* Mobile: Dropdown Button */}
+              <div className="sm:hidden relative">
+                <button 
+                  onClick={() => setShowFormatDropdown(!showFormatDropdown)} 
+                  disabled={isConverting}
+                  className="btn-primary flex items-center gap-2 text-sm px-4 py-2"
+                >
+                  <Download className="w-4 h-4" />
+                  Download
+                </button>
+                {showFormatDropdown && (
+                  <div className="absolute bottom-full right-0 mb-2 w-32 bg-white dark:bg-zinc-800 border border-accent-200 dark:border-accent-900/30 rounded-lg shadow-lg overflow-hidden z-50">
+                    {Object.entries(FORMAT_CONFIGS).map(([format, config]) => (
+                      <button
+                        key={format}
+                        onClick={async () => {
+                          setDownloadFormat(format)
+                          setShowFormatDropdown(false)
+                          setTimeout(downloadImage, 0)
+                        }}
+                        className="block w-full text-left px-4 py-2 text-sm hover:bg-accent-500/10 dark:hover:bg-accent-500/20 text-zinc-700 dark:text-zinc-300"
+                      >
+                        {config.label}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+              
+              {/* Desktop: Standard Button */}
               <button 
                 onClick={downloadImage} 
                 disabled={isConverting}
-                className="btn-primary flex items-center gap-2 text-sm sm:text-base px-4 sm:px-6 py-2 sm:py-3"
+                className="hidden sm:flex btn-primary items-center gap-2 text-sm sm:text-base px-4 sm:px-6 py-2 sm:py-3"
               >
                 {isConverting ? (
                   <>
@@ -488,8 +519,7 @@ function BackgroundRemover() {
                 ) : (
                   <>
                     <Download className="w-4 h-4" />
-                    <span className="hidden sm:inline">Download {FORMAT_CONFIGS[downloadFormat].label}</span>
-                    <span className="sm:hidden">Download</span>
+                    <span>Download {FORMAT_CONFIGS[downloadFormat].label}</span>
                   </>
                 )}
               </button>

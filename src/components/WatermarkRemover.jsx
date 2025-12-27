@@ -23,6 +23,7 @@ function WatermarkRemover() {
   const [opencvReady, setOpencvReady] = useState(false)
   const [downloadFormat, setDownloadFormat] = useState('png')
   const [isConverting, setIsConverting] = useState(false)
+  const [showFormatDropdown, setShowFormatDropdown] = useState(false)
 
   // Canvas refs for drawing mask
   const canvasRef = useRef(null)
@@ -510,8 +511,8 @@ useEffect(() => {
             />
           </div>
 
-          {/* Format Selection */}
-          <div className="p-4 bg-white dark:bg-zinc-800/50 rounded-xl border border-accent-100 dark:border-accent-900/30">
+          {/* Format Selection - Desktop only */}
+          <div className="hidden sm:block p-4 bg-white dark:bg-zinc-800/50 rounded-xl border border-accent-100 dark:border-accent-900/30">
             <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-3">
               Download Format
             </label>
@@ -523,18 +524,18 @@ useEffect(() => {
                    className={`
                      py-2 px-3 rounded-lg border text-sm font-medium transition-all
                     ${downloadFormat === format
-                      ? 'border-accent-500 bg-accent-500/10 text-accent-600 dark:text-accent-400'
-                      : 'border-accent-200 dark:border-accent-900/30 bg-white dark:bg-zinc-800/50 text-zinc-700 dark:text-zinc-300 hover:border-accent-300 dark:hover:border-zinc-600'
-                    }
-                  `}
-                >
-                  {config.label}
-                </button>
-              ))}
-            </div>
-          </div>
+                       ? 'border-accent-500 bg-accent-500/10 text-accent-600 dark:text-accent-400'
+                       : 'border-accent-200 dark:border-accent-900/30 bg-white dark:bg-zinc-800/50 text-zinc-700 dark:text-zinc-300 hover:border-accent-300 dark:hover:border-zinc-600'
+                     }
+                   `}
+                 >
+                   {config.label}
+                 </button>
+               ))}
+             </div>
+           </div>
 
-          {/* Sticky Action Buttons */}
+           {/* Sticky Action Buttons */}
           <div className="sticky bottom-20 sm:bottom-4 z-40">
             <div className="flex justify-center gap-2 sm:gap-4 p-3 sm:p-4 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-sm rounded-xl border border-accent-100 dark:border-accent-900/30 shadow-lg">
               <button onClick={reset} className="btn-secondary flex items-center gap-2 text-sm sm:text-base px-4 sm:px-6 py-2 sm:py-3">
@@ -542,10 +543,40 @@ useEffect(() => {
                 <span className="hidden sm:inline">Start Over</span>
                 <span className="sm:hidden">Reset</span>
               </button>
+              {/* Mobile: Dropdown Button */}
+              <div className="sm:hidden relative">
+                <button 
+                  onClick={() => setShowFormatDropdown(!showFormatDropdown)} 
+                  disabled={isConverting}
+                  className="btn-primary flex items-center gap-2 text-sm px-4 py-2"
+                >
+                  <Download className="w-4 h-4" />
+                  Download
+                </button>
+                {showFormatDropdown && (
+                  <div className="absolute bottom-full right-0 mb-2 w-32 bg-white dark:bg-zinc-800 border border-accent-200 dark:border-accent-900/30 rounded-lg shadow-lg overflow-hidden z-50">
+                    {Object.entries(FORMAT_CONFIGS).map(([format, config]) => (
+                      <button
+                        key={format}
+                        onClick={async () => {
+                          setDownloadFormat(format)
+                          setShowFormatDropdown(false)
+                          setTimeout(downloadImage, 0)
+                        }}
+                        className="block w-full text-left px-4 py-2 text-sm hover:bg-accent-500/10 dark:hover:bg-accent-500/20 text-zinc-700 dark:text-zinc-300"
+                      >
+                        {config.label}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+              
+              {/* Desktop: Standard Button */}
               <button 
                 onClick={downloadImage} 
                 disabled={isConverting}
-                className="btn-primary flex items-center gap-2 text-sm sm:text-base px-4 sm:px-6 py-2 sm:py-3"
+                className="hidden sm:flex btn-primary items-center gap-2 text-sm sm:text-base px-4 sm:px-6 py-2 sm:py-3"
               >
                 {isConverting ? (
                   <>
@@ -555,8 +586,7 @@ useEffect(() => {
                 ) : (
                   <>
                     <Download className="w-4 h-4" />
-                    <span className="hidden sm:inline">Download {FORMAT_CONFIGS[downloadFormat].label}</span>
-                    <span className="sm:hidden">Download</span>
+                    <span>Download {FORMAT_CONFIGS[downloadFormat].label}</span>
                   </>
                 )}
               </button>
